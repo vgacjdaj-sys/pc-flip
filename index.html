@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Перекуп</title>
+<style>
+:root {
+  --bg: #f2f2f7; --card: #ffffff; --text: #000000; --text-sec: #8e8e93;
+  --border: #e5e5ea; --blue: #007aff; --green: #34c759; --red: #ff3b30;
+  --dock-bg: rgba(255,255,255,0.6);
+}
+body.dark {
+  --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-sec: #8e8e93;
+  --border: #38383a; --dock-bg: rgba(28,28,30,0.6);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: #000; color: var(--text); -webkit-user-select: none; user-select: none; }
+#app { height: 100vh; width: 100%; background: var(--bg); position: relative; overflow: hidden; }
+input, textarea, select { -webkit-user-select: text; user-select: text; font-size: 17px !important; }
+
+/* iOS Banner */
+.ios-banner { position: fixed; top: 10px; left: 10px; right: 10px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 20px; padding: 12px 16px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-150%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.ios-banner.show { transform: translateY(0); }
+.ios-banner .b-title { font-weight: 600; font-size: 14px; }
+.ios-banner .b-body { font-size: 14px; color: #333; }
+body.dark .ios-banner { background: rgba(28,28,30,0.9); }
+body.dark .ios-banner .b-body { color: #eee; }
+
+/* Animations */
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.screen { animation: slideIn 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.modal { animation: fadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.btn { transition: transform 0.1s, opacity 0.1s; }
+.btn:active { transform: scale(0.96); opacity: 0.8; }
+.app:active { transform: scale(0.9); transition: transform 0.1s; }
+
+/* Phone Shell */
+.phone { height: 100%; display: flex; flex-direction: column; position: relative; }
+.notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 32px; background: #000; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 1000; }
+.status-bar { height: 50px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 24px 10px 24px; font-size: 15px; font-weight: 600; z-index: 999; position: relative; }
+.home-screen { flex: 1; background: linear-gradient(160deg, #2c5f8a, #0d1b2a); display: flex; flex-direction: column; overflow-y: auto; }
+body.dark .home-screen { background: linear-gradient(160deg, #1a2a3a, #000); }
+.app-grid { padding: 20px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 14px; align-content: start; }
+.app { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; position: relative; transition: transform 0.2s; }
+.app .icon { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+.app .icon svg { width: 34px; height: 34px; fill: #fff; stroke: none; }
+.app .label { font-size: 13px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.badge { position: absolute; top: -6px; right: -6px; background: var(--red); color: #fff; font-size: 13px; font-weight: 700; padding: 3px 7px; border-radius: 12px; min-width: 22px; text-align: center; border: 2px solid var(--bg); z-index: 10; }
+.dock { margin: auto 16px 28px 16px; padding: 14px; background: var(--dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 34px; display: flex; justify-content: space-around; }
+.dock .app .icon { box-shadow: none; }
+.home-indicator { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 130px; height: 5px; background: var(--text); opacity: 0.3; border-radius: 10px; z-index: 1000; }
+
+/* App UI */
+.screen { height: 100%; display: flex; flex-direction: column; background: var(--bg); }
+.hdr { padding: 14px 16px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding-top: max(14px, env(safe-area-inset-top)); flex-shrink: 0; z-index: 10; }
+.hdr h1 { font-size: 19px; font-weight: 700; flex: 1; text-align: center; }
+.hdr-btn { font-size: 18px; color: var(--blue); font-weight: 400; cursor: pointer; padding: 4px; min-width: 50px; }
+.hdr-btn.right { text-align: right; }
+.body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 40px; }
+.btn { padding: 16px; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; background: var(--blue); color: #fff; width: 100%; cursor: pointer; }
+.btn-sm { padding: 10px 18px; font-size: 15px; width: auto; border-radius: 10px; }
+.btn-sec { background: var(--border); color: var(--text); }
+.btn-green { background: var(--green); }
+.btn-red { background: var(--red); }
+.input { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 12px; outline: none; background: var(--card); color: var(--text); margin-bottom: 14px; transition: border 0.2s; }
+.input:focus { border-color: var(--blue); }
+select.input { -webkit-appearance: none; appearance: none; }
+.card { background: var(--card); border-radius: 14px; margin: 12px 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s; }
+.card:active { transform: scale(0.98); }
+.card-pad { padding: 16px; }
+.row { display: flex; gap: 14px; padding: 14px; cursor: pointer; }
+.photo { width: 120px; height: 120px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 52px; background: var(--bg); position: relative; }
+.info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+.price { font-size: 20px; font-weight: 800; }
+.title { font-size: 16px; line-height: 1.3; margin-top: 2px; color: var(--text); }
+.csub { font-size: 13px; color: var(--text-sec); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tab { flex: 1; padding: 14px; text-align: center; font-size: 15px; font-weight: 600; color: var(--text-sec); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.2s; }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* Chat */
+.chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); -webkit-overflow-scrolling: touch; }
+.msg { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; word-wrap: break-word; animation: fadeIn 0.2s ease-out; }
+.mp { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.mo { background: var(--card); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+.mt { font-size: 11px; opacity: 0.6; margin-top: 6px; display: block; text-align: right; }
+.cact { padding: 14px; background: var(--card); border-top: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; flex-shrink: 0; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+.typing { align-self: flex-start; background: var(--card); padding: 14px 18px; border-radius: 20px; font-size: 15px; color: var(--text-sec); font-style: italic; border-bottom-left-radius: 4px; animation: fadeIn 0.2s; }
+
+/* Modals & Misc */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; backdrop-filter: blur(2px); }
+.modal { background: var(--card); border-radius: 18px; padding: 24px; width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto; }
+.modal h2 { font-size: 20px; margin-bottom: 16px; text-align: center; }
+.mact { display: flex; gap: 10px; margin-top: 20px; }
+.empty { text-align: center; color: var(--text-sec); padding: 50px 20px; font-size: 16px; }
+.sms-item { display: flex; gap: 14px; padding: 16px; cursor: pointer; align-items: center; background: var(--card); border-bottom: 1px solid var(--border); transition: background 0.2s; }
+.sms-item:active { background: var(--bg); }
+.ava { width: 54px; height: 54px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; flex-shrink: 0; }
+.ava.family { background: #ff9500; }
+.ava.buyer { background: #34c759; }
+.sms-content { flex: 1; min-width: 0; }
+.sms-name { font-weight: 600; font-size: 17px; }
+.sms-prev { font-size: 15px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+.unread-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); }
+.specs { padding: 18px; }
+.spec { display: flex; justify-content: space-between; padding: 10px 0; font-size: 16px; border-bottom: 1px solid var(--border); }
+.spec:last-child { border: none; }
+.spec span:first-child { color: var(--text-sec); }
+
+/* Switch */
+.switch { position: relative; display: inline-block; width: 56px; height: 32px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 32px; }
+.slider:before { position: absolute; content: ""; height: 28px; width: 28px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--green); }
+input:checked + .slider:before { transform: translateX(24px); }
+
+/* Neon Tap Game */
+.game-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #0f0f13; position: relative; overflow: hidden; }
+.neon-target { position: absolute; width: 60px; height: 60px; background: #ff0055; border-radius: 50%; box-shadow: 0 0 20px #ff0055, inset 0 0 10px #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+.game-hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; color: #fff; font-size: 24px; font-weight: 800; text-shadow: 0 0 10px #ff0055; }
+.game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; z-index: 10; }
+
+/* Work Game Toggles */
+.work-toggles { display: flex; gap: 15px; margin: 30px 0; justify-content: center; }
+.w-toggle { width: 60px; height: 100px; background: var(--card); border-radius: 10px; border: 2px solid var(--border); position: relative; cursor: pointer; overflow: hidden; }
+.w-toggle .handle { width: 100%; height: 50%; background: var(--blue); position: absolute; left: 0; transition: top 0.2s; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+.w-toggle.off .handle { top: 50%; background: var(--text-sec); }
+.w-toggle.on .handle { top: 0%; background: var(--green); }
+.w-toggle .label { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 12px; font-weight: bold; color: var(--text); z-index: 1; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const rnd = (a,b) => a + Math.random()*(b-a);
+const rint = (a,b) => Math.floor(rnd(a,b+1));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const fmt = n => Math.round(n).toLocaleString('ru-RU');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+// --- REAL DATES SYSTEM ---
+const GAME_START_DATE = new Date(2024, 4, 1); // 1 мая 2024
+const CURRENT_DB_VERSION = 20;
+
+function getTimeData() {
+  if (!state || !state.time) return { totalMins: 480, dateStr: '01.05.2024', timeStr: '08:00', fullStr: '01.05.2024 08:00', dayIndex: 0 };
+  const tm = Math.floor(state.time.totalMins);
+  const days = Math.floor(tm / 1440);
+  const d = new Date(GAME_START_DATE);
+  d.setDate(d.getDate() + days);
+  
+  const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  const timeStr = `${String(Math.floor((tm % 1440) / 60)).padStart(2,'0')}:${String((tm % 1440) % 60).padStart(2,'0')}`;
+  return { totalMins: tm, dateStr, timeStr, fullStr: `${dateStr} ${timeStr}`, dayIndex: days };
+}
+
+function formatMinsToDateString(mins) {
+  const days = Math.floor(mins / 1440);
+  const d = new Date(GAME_START_DATE);
+  d.setDate(d.getDate() + days);
+  const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  const timeStr = `${String(Math.floor((mins % 1440) / 60)).padStart(2,'0')}:${String((mins % 1440) % 60).padStart(2,'0')}`;
+  return `${dateStr} ${timeStr}`;
+}
+
+// --- IOS SVG ICONS ---
+const SVG = {
+  ahvito: `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6zm4 4h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`,
+  bank: `<svg viewBox="0 0 24 24"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>`,
+  garage: `<svg viewBox="0 0 24 24"><path d="M22 4H2v16h20V4zm-9 12H7v-2h6v2zm4-4H7v-2h10v2zm0-4H7V6h10v2z"/></svg>`,
+  sms: `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`,
+  game: `<svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,
+  train: `<svg viewBox="0 0 24 24"><path d="M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2.23l2-2H14l2 2H18v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,
+  orders: `<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`,
+  delivery: `<svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,
+  work: `<svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>`
+};
+const GRADIENTS = {
+  ahvito: 'linear-gradient(135deg, #00c6ff, #0072ff)',
+  bank: 'linear-gradient(135deg, #34c759, #28a745)',
+  garage: 'linear-gradient(135deg, #7f00ff, #e100ff)',
+  sms: 'linear-gradient(135deg, #ff9500, #ff5e00)',
+  settings: 'linear-gradient(135deg, #8e8e93, #636366)',
+  game: 'linear-gradient(135deg, #ff2d55, #ff0055)',
+  train: 'linear-gradient(135deg, #00b4db, #0083b0)',
+  orders: 'linear-gradient(135deg, #f7971e, #ffd200)',
+  delivery: 'linear-gradient(135deg, #4b6cb7, #182848)',
+  work: 'linear-gradient(135deg, #11998e, #38ef7d)'
+};
+
+// --- REALISTIC CATALOG (RUB) ---
+const CATALOG = {
+  cpu: [
+    { n: 'Intel Celeron G5905', p: 1500, t: 0 }, { n: 'AMD Athlon 3000G', p: 2000, t: 0 },
+    { n: 'Intel Core i3-10100F', p: 4500, t: 1 }, { n: 'AMD Ryzen 3 3200G', p: 4000, t: 1 },
+    { n: 'AMD Ryzen 5 3600', p: 6500, t: 2 }, { n: 'Intel Core i5-10400F', p: 7000, t: 2 },
+    { n: 'Intel Core i5-12400F', p: 11000, t: 2 }, { n: 'AMD Ryzen 5 5600X', p: 12000, t: 2 },
+    { n: 'Intel Core i7-12700F', p: 18000, t: 3 }, { n: 'AMD Ryzen 7 5800X3D', p: 25000, t: 3 },
+    { n: 'Intel Core i9-13900K', p: 45000, t: 4 }, { n: 'AMD Ryzen 9 7950X', p: 50000, t: 4 }
+  ],
+  gpu: [
+    { n: 'Встроенная графика', p: 0, t: 0 }, { n: 'NVIDIA GT 1030', p: 3000, t: 0 },
+    { n: 'AMD RX 550', p: 3500, t: 0 }, { n: 'NVIDIA GTX 1050 Ti', p: 5500, t: 1 },
+    { n: 'NVIDIA GTX 1650', p: 8000, t: 1 }, { n: 'AMD RX 580 8GB', p: 8000, t: 1 },
+    { n: 'NVIDIA GTX 1660 Super', p: 10000, t: 2 }, { n: 'NVIDIA RTX 2060', p: 12000, t: 2 },
+    { n: 'AMD RX 6600', p: 14000, t: 2 }, { n: 'NVIDIA RTX 3060 12GB', p: 18000, t: 3 },
+    { n: 'NVIDIA RTX 3060 Ti', p: 22000, t: 3 }, { n: 'NVIDIA RTX 3070', p: 26000, t: 3 },
+    { n: 'AMD RX 6800 XT', p: 35000, t: 4 }, { n: 'NVIDIA RTX 3080', p: 38000, t: 4 },
+    { n: 'NVIDIA RTX 4070', p: 48000, t: 4 }, { n: 'NVIDIA RTX 4080', p: 90000, t: 4 },
+    { n: 'NVIDIA RTX 4090', p: 170000, t: 4 }
+  ],
+  ram: [
+    { n: '4GB DDR3', p: 500, t: 0 }, { n: '8GB DDR3', p: 1000, t: 0 },
+    { n: '8GB DDR4', p: 1500, t: 1 }, { n: '16GB DDR4', p: 3000, t: 2 },
+    { n: '32GB DDR4', p: 6000, t: 3 }, { n: '16GB DDR5', p: 5000, t: 3 },
+    { n: '32GB DDR5', p: 10000, t: 4 }, { n: '64GB DDR5', p: 20000, t: 4 }
+  ],
+  storage: [
+    { n: 'HDD 500GB', p: 400, t: 0 }, { n: 'HDD 1TB', p: 800, t: 0 },
+    { n: 'HDD 2TB', p: 1500, t: 1 }, { n: 'SSD 256GB', p: 1000, t: 1 },
+    { n: 'SSD 512GB', p: 2000, t: 2 }, { n: 'SSD 1TB', p: 4000, t: 3 },
+    { n: 'SSD 2TB NVMe', p: 8000, t: 4 }
+  ],
+  mb: [
+    { n: 'H310M', p: 1500, t: 0 }, { n: 'A320M', p: 1500, t: 0 },
+    { n: 'B450M', p: 3500, t: 1 }, { n: 'B560M', p: 5000, t: 2 },
+    { n: 'B550M', p: 6000, t: 2 }, { n: 'Z690', p: 12000, t: 3 },
+    { n: 'X670E', p: 20000, t: 4 }
+  ],
+  psu: [
+    { n: '400W Noname', p: 500, t: 0 }, { n: '500W Bronze', p: 1500, t: 1 },
+    { n: '650W Bronze', p: 2500, t: 2 }, { n: '750W Gold', p: 4500, t: 3 },
+    { n: '850W Gold', p: 6000, t: 3 }, { n: '1000W Platinum', p: 10000, t: 4 }
+  ],
+  case: [
+    { n: 'Б/У корпус', p: 300, t: 0 }, { n: 'Простой черный', p: 1000, t: 1 },
+    { n: 'С подсветкой', p: 2000, t: 2 }, { n: 'Стекло RGB', p: 3500, t: 3 },
+    { n: 'Премиум ATX', p: 7000, t: 4 }
+  ]
+};
+const CAT_LABEL = { cpu: 'Процессор', gpu: 'Видеокарта', ram: 'ОЗУ', storage: 'Накопитель', mb: 'Материнская плата', psu: 'Блок питания', case: 'Корпус' };
+const SELLER_NAMES = ['Алексей', 'Дмитрий', 'Сергей', 'Иван', 'Андрей', 'Михаил', 'Роман', 'Никита', 'Олег', 'Егор', 'Артём', 'Владимир', 'Максим', 'Кирилл'];
+const BUYER_NAMES = ['Павел', 'Денис', 'Кирилл', 'Максим', 'Антон', 'Глеб', 'Евгений', 'Вадим', 'Игорь', 'Степан'];
+const LOCATIONS = ['Москва', 'СПб', 'Казань', 'Екатеринбург', 'Новосибирск', 'Краснодар', 'Нижний Новгород', 'Самара', 'Омск'];
+const COLORS = ['#00aaff', '#ff9500', '#5856d6', '#34c759', '#ff2d55', '#ffcc00', '#af52de', '#ff3b30'];
+
+// --- AUDIO (NOTIFICATION SOUND) ---
+let audioCtx = null;
+function playBeep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch(e) {}
+}
+
+function showBanner(title, body, onClick) {
+  document.querySelectorAll('.ios-banner').forEach(b => b.remove());
+  const b = document.createElement('div');
+  b.className = 'ios-banner';
+  b.innerHTML = `<div class="b-title">${title}</div><div class="b-body">${body}</div>`;
+  b.onclick = () => { if(onClick) onClick(); b.classList.remove('show'); setTimeout(() => b.remove(), 400); };
+  document.body.appendChild(b);
+  setTimeout(() => b.classList.add('show'), 50);
+  setTimeout(() => { if(b.parentNode) { b.classList.remove('show'); setTimeout(() => b.remove(), 400); } }, 4000);
+  playBeep();
+}
+
+// --- GENERATORS ---
+function generatePC() {
+  const roll = Math.random();
+  let tier = roll < 0.05 ? 4 : roll < 0.20 ? 3 : roll < 0.50 ? 2 : roll < 0.80 ? 1 : 0;
+  const getPart = (cat) => {
+    let list = CATALOG[cat].filter(p => p.t === tier);
+    if (!list.length) list = CATALOG[cat].filter(p => p.t === tier - 1 || p.t === tier + 1);
+    if (!list.length) list = CATALOG[cat];
+    return pick(list);
+  };
+  return { id: uid(), cpu: getPart('cpu'), gpu: getPart('gpu'), ram: getPart('ram'), storage: getPart('storage'), mb: getPart('mb'), psu: getPart('psu'), case: getPart('case'), condition: rnd(0.75, 1.0), color: pick(COLORS) };
+}
+function pcValue(pc) {
+  try {
+    if (!pc || !pc.cpu || !pc.gpu) return 0;
+    const sum = pc.cpu.p + pc.gpu.p + pc.ram.p + pc.storage.p + pc.mb.p + pc.psu.p + pc.case.p;
+    return Math.round(sum * (pc.condition || 1));
+  } catch(e) { return 0; }
+}
+function genListing() {
+  const pc = generatePC();
+  const tv = pcValue(pc);
+  const roll = Math.random();
+  let mult = roll < 0.15 ? rnd(0.75, 0.90) : roll < 0.65 ? rnd(0.95, 1.10) : rnd(1.15, 1.35);
+  const asking = Math.round(tv * mult / 500) * 500;
+  const min = Math.round(asking * rnd(0.75, 0.90) / 500) * 500;
+  return { id: uid(), pc, askingPrice: asking, minPrice: min, trueValue: tv, seller: { name: pick(SELLER_NAMES), greed: rnd(0.2, 0.9), patience: rint(2, 4) }, location: pick(LOCATIONS), status: 'active', createdAt: Date.now(), badge: Math.random() < 0.1 ? 'top' : (Math.random() < 0.15 ? 'urgent' : null) };
+}
+
+// --- AI LOGIC ---
+function sellerRespond(listing, offer, attempts) {
+  const { askingPrice, minPrice, seller } = listing;
+  const ratio = offer / minPrice;
+  if (offer >= askingPrice) return { type: 'accept', price: offer, text: pick(['Здравствуйте, да, по рукам.', 'Добрый, отлично, забирайте.', 'Привет. Ну раз так — ваш.']) };
+  if (offer >= minPrice) {
+    if (Math.random() < (1 - seller.greed) || attempts <= 1) return { type: 'accept', price: offer, text: pick(['Здравствуйте. Хорошо, согласен.', 'Добрый. Ладно, по рукам.', 'Привет, ок, беру вашу цену.']) };
+    const c = Math.round((offer + askingPrice) / 2 / 100) * 100;
+    return { type: 'counter', price: c, text: pick([`Давайте за ${fmt(c)} и расходимся.`, `Чуть добавьте — отдам за ${fmt(c)}.`]) };
+  }
+  if (ratio >= 0.90) return { type: 'counter', price: minPrice, text: pick([`Максимум могу скинуть до ${fmt(minPrice)}.`, `Ниже ${fmt(minPrice)} не смогу, это минимум.`]) };
+  if (ratio >= 0.60 && attempts > 1) {
+    const c = Math.round(minPrice * 0.95 / 100) * 100;
+    return { type: 'counter', price: c, text: pick([`Это слишком дёшево. Могу предложить за ${fmt(c)}.`, `Не смешите, ${fmt(c)} — и то в убыток себе.`]) };
+  }
+  return { type: 'reject', text: pick(['Не, за такие деньги не отдам. Удачи.', 'Слишком мало. Неинтересно.', 'Вы серьезно? Я лучше выкину.']) };
+}
+function buyerRespond(ml, offer) {
+  const max = ml.buyer.maxPrice;
+  if (offer <= max) return { type: 'accept', price: offer, text: pick(['Отлично, беру!', 'Договорились, спасибо.', 'Ок, согласен.']) };
+  const ratio = offer / max;
+  if (ratio <= 1.05) return { type: 'counter', price: max, text: pick([`Могу только ${fmt(max)} — это максимум.`, `${fmt(max)} — и по рукам?`]) };
+  if (ratio <= 1.20) { const c = Math.round((offer + max) / 2 / 100) * 100; return { type: 'counter', price: c, text: pick([`Дорого. Давайте за ${fmt(c)}?`, `Не, ну за ${fmt(c)} возьму.`]) }; }
+  return { type: 'reject', text: pick(['Слишком дорого. Откажусь.', 'Нет, за такие деньги лучше новый.']) };
+}
+
+// --- STATE & STORAGE (Local DB) ---
+const USERS_KEY = 'perekup_users_v20';
+const THEME_KEY = 'perekup_theme';
+let currentUser = null;
+let state = null;
+let ui = { screen: 'home', tab: 'pc', partCat: 'all', listingId: null, pcId: null, chatId: null, modal: null };
+let isRegisterMode = false;
+let saveTimeout = null;
+let lastUnreadCount = 0;
+
+function hashStr(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+  return hash.toString();
+}
+
+function save() {
+  if (!currentUser || !state) return;
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    try {
+      const users = JSON.parse(localStorage.getItem(USERS_KEY) || '{}');
+      if (users[currentUser]) {
+        users[currentUser].data = state;
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      }
+    } catch(e) { console.error('Save failed', e); }
+  }, 2000);
+}
+
+function loadUserData(username) {
+  try {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '{}');
+    if (users[username]) { 
+      currentUser = username; 
+      state = users[username].data; 
+      
+      if (!state.debts) state.debts = [];
+      if (!state.deliveries) state.deliveries = [];
+      if (!state.family) state.family = { mom: {max: 15000}, dad: {max: 20000}, grandma: {max: 5000}, grandpa: {max: 5000} };
+      if (!state.meetings) state.meetings = {};
+      if (!state.travel) state.travel = null;
+      if (!state.time) { state.time = { totalMins: 480 }; state.lastTimeUpdate = Date.now(); } 
+      if (!state.user.rating) state.user.rating = 5.0;
+      if (!state.user.reviews) state.user.reviews = [];
+      if (!state.user.orders) state.user.orders = [];
+      if (!state.user.activeOrders) state.user.activeOrders = [];
+      
+      // Cleanup corrupted PCs
+      state.pcs = state.pcs.filter(pc => pc && pc.cpu && pc.gpu);
+      
+      if (!state.chats['fam_mom']) {
+        const now = Date.now();
+        state.chats['fam_mom'] = { id: 'fam_mom', isFamily: true, otherPartyName: 'Мама', messages: [{ role: 'other', type: 'text', text: 'Сынок, привет! Как дела? Поел?', ts: now - 100000 }], closed: false, lastReadAt: now };
+        state.chats['fam_dad'] = { id: 'fam_dad', isFamily: true, otherPartyName: 'Папа', messages: [{ role: 'other', type: 'text', text: 'Привет. Как успехи?', ts: now - 200000 }], closed: false, lastReadAt: now };
+        state.chats['fam_grandma'] = { id: 'fam_grandma', isFamily: true, otherPartyName: 'Бабушка', messages: [{ role: 'other', type: 'text', text: 'Внучок, приезжай на пирожки!', ts: now - 300000 }], closed: false, lastReadAt: now };
+        state.chats['fam_grandpa'] = { id: 'fam_grandpa', isFamily: true, otherPartyName: 'Дедушка', messages: [{ role: 'other', type: 'text', text: 'Здорово, бандит. Что нового?', ts: now - 400000 }], closed: false, lastReadAt: now };
+      }
+      
+      if (!state.listings || state.listings.length === 0) {
+        genMarket();
+      }
+      return true; 
+    }
+  } catch(e) { console.error('Load failed', e); }
+  return false;
+}
+function initTheme() {
+  if (localStorage.getItem(THEME_KEY) === 'dark') document.body.classList.add('dark');
+}
+
+function newGame(username, pass, city) {
+  const bal = rint(10000, 60000);
+  return {
+    v: CURRENT_DB_VERSION,
+    createdAt: Date.now(),
+    currentCity: city || 'Москва',
+    user: { username, pin: null, balance: bal, transactions: [{ desc: 'Стартовый капитал', amount: bal, ts: Date.now() }], rating: 5.0, reviews: [], orders: [], activeOrders: [] },
+    listings: [], partsListings: [], myListings: [], pcs: [], partsInv: [], chats: {},
+    lastMarketUpdate: Date.now(),
+    debts: [],
+    deliveries: [],
+    meetings: {},
+    travel: null,
+    time: { totalMins: 480 }, 
+    lastTimeUpdate: Date.now(),
+    family: { mom: {max: 15000}, dad: {max: 20000}, grandma: {max: 5000}, grandpa: {max: 5000} },
+    gameHighScore: 0
+  };
+}
+function genMarket() {
+  state.listings = [];
+  for (let i = 0; i < 35; i++) state.listings.push(genListing());
+  state.partsListings = [];
+  for (const cat of Object.keys(CATALOG)) {
+    for (let i = 0; i < 4; i++) {
+      const p = pick(CATALOG[cat]); const cond = rnd(0.70, 1.0);
+      state.partsListings.push({ id: uid(), cat, part: p, condition: cond, price: Math.round(p.p * cond * rnd(0.85, 1.15) / 100) * 100 });
+    }
+  }
+  state.lastMarketUpdate = Date.now();
+}
+
+// --- TIME & EVENTS ---
+function updateTime() {
+  if(!state) return;
+  const now = Date.now();
+  const diff = now - (state.lastTimeUpdate || now);
+  
+  let speedMultiplier = 1;
+  if (ui.screen === 'minigame' || ui.screen === 'work-game') speedMultiplier = 5; 
+  
+  const gameMinsPassed = (diff / (60000 / 55)) * speedMultiplier;
+  
+  state.time.totalMins += gameMinsPassed;
+  state.lastTimeUpdate = now;
+}
+
+function checkEvents() {
+  if (!state) return;
+  const now = Date.now();
+  updateTime();
+  
+  if (now - state.lastMarketUpdate > 30 * 60000 || state.listings.length < 5) { 
+    genMarket(); 
+    save();
+  }
+  
+  // Deliveries
+  if (state.deliveries) {
+    const t = getTimeData();
+    const nowMins = t.totalMins;
+    let delivered = false;
+    for (let i = state.deliveries.length - 1; i >= 0; i--) {
+      const d = state.deliveries[i];
+      if (nowMins >= d.arriveMins) {
+        if (!d.isSeller) {
+          if (d.isPC) {
+            if(d.item && d.item.cpu) state.pcs.push(d.item);
+          } else {
+            if(d.item && d.item.part) state.partsInv.push(d.item);
+          }
+        }
+        showBanner('Доставка', d.isSeller ? 'Покупатель получил ваш заказ!' : 'Ваш заказ прибыл! Проверьте Гараж.', () => { ui.screen = d.isSeller ? 'home' : 'garage'; render(); });
+        state.deliveries.splice(i, 1);
+        delivered = true;
+      }
+    }
+    if (delivered) {
+      save();
+      if (ui.screen === 'delivery') render();
+    }
+  }
+
+  // Travel arrival
+  if (state.travel) {
+    const t = getTimeData();
+    if (t.totalMins >= state.travel.arriveMins) {
+      state.currentCity = state.travel.toCity;
+      showBanner('Поезд прибыл', `Вы прибыли в город ${state.currentCity}`);
+      state.travel = null;
+      save();
+    }
+  }
+
+  // Trigger buyer inquiries
+  for (const ml of state.myListings) {
+    if (ml.status === 'active' && !ml.eventFired && now >= ml.eventAt) {
+      ml.eventFired = true; 
+      if (Math.random() < 0.10 && !ml.negotiable) {
+        state.user.balance += ml.askingPrice;
+        state.user.transactions.push({ desc: `Продажа: ${ml.type==='part'?ml.part.part.n:pcTitle(ml.pc)}`, amount: ml.askingPrice, ts: Date.now() });
+        ml.status = 'sold'; ml.soldPrice = ml.askingPrice;
+        addReview(5, 'Купил без торга, всё супер!');
+      } else {
+        const max = Math.round(ml.askingPrice * rnd(0.85, 1.05) / 100) * 100;
+        ml.buyer = { name: pick(BUYER_NAMES), maxPrice: max };
+        const cid = 'ml_' + ml.id;
+        const initial = Math.round(max * rnd(0.8, 0.95) / 100) * 100;
+        state.chats[cid] = {
+          id: cid, listingId: ml.id, playerIsBuyer: false, messages: [{ role: 'other', type: 'offer', price: initial, text: `Здравствуйте! Готов забрать за ${fmt(initial)} ₽.`, ts: Date.now() }], closed: false, dealPrice: null, attempts: 3, lastReadAt: 0, otherPartyName: ml.buyer.name
+        };
+        ml.chatId = cid;
+        showBanner('Ахвито', `Покупатель пишет по вашему объявлению!`, () => { ui.screen='sms'; ui.chatId=cid; render(); });
+      }
+      save();
+    }
+  }
+
+  // Generate Orders
+  if (state.user.orders.length < 3 && Math.random() < 0.1) {
+    const budget = rint(20, 150) * 1000;
+    state.user.orders.push({
+      id: uid(),
+      client: pick(BUYER_NAMES),
+      budget: budget,
+      text: `Нужен ПК для ${pick(['игр', 'работы', 'учёбы', 'монтажа'])}. Готов отдать до ${fmt(budget)} ₽.`,
+      reward: Math.round(budget * rnd(0.1, 0.2))
+    });
+    save();
+  }
+
+  // Delayed messages
+  for (const cid in state.chats) {
+    const c = state.chats[cid];
+    if (c.closed) continue;
+    const hidden = c.messages.filter(m => m.visibleAt && m.visibleAt <= now && !m.notified);
+    if (hidden.length > 0) {
+      hidden.forEach(m => m.notified = true);
+      if (ui.screen !== 'chat' || ui.chatId !== cid) {
+        const lastMsg = hidden[hidden.length-1];
+        showBanner(c.otherPartyName, lastMsg.text, () => { ui.screen = 'chat'; ui.chatId = cid; render(); });
+      }
+      save();
+    }
+  }
+}
+
+function addReview(score, text) {
+  state.user.reviews.push({ score, text, ts: Date.now() });
+  const sum = state.user.reviews.reduce((acc, r) => acc + r.score, 0);
+  state.user.rating = (sum / state.user.reviews.length).toFixed(1);
+}
+
+// --- ACTIONS ---
+function buyNowDirect(lid) {
+  const l = state.listings.find(x => x.id === lid);
+  if (!l) return alert('Объявление удалено');
+  const cid = 'mk_' + l.id;
+  if (!state.chats[cid]) {
+    state.chats[cid] = {
+      id: cid, listingId: l.id, playerIsBuyer: true, messages: [], closed: false,
+      dealPrice: l.askingPrice, attempts: 0, lastReadAt: 0, otherPartyName: l.seller.name, isDirectBuy: false
+    };
+  }
+  const chat = state.chats[cid];
+  chat.messages.push({ role: 'player', type: 'text', text: 'Здравствуйте, хочу купить ваш ПК.', ts: Date.now() });
+  chat.messages.push({ role: 'other', type: 'text', text: `Здравствуйте! Спасибо за покупку. Как вам удобнее получить товар? Можете приехать или оформим доставку.`, ts: Date.now() });
+  save();
+  ui.chatId = cid; ui.screen = 'chat'; render();
+}
+
+function postPC(pcId, price, negotiable) {
+  const pc = state.pcs.find(p => p.id === pcId); if (!pc) return;
+  const timeOffset = negotiable ? rnd(0.5, 2) : rnd(2, 6);
+  state.myListings.push({ id: uid(), type: 'pc', pc, askingPrice: Math.round(price/100)*100, trueValue: pcValue(pc), eventAt: Date.now() + timeOffset*60000, eventFired: false, status: 'active', negotiable });
+  state.pcs = state.pcs.filter(p => p.id !== pcId); save(); render(); alert('Объявление создано!');
+}
+function postPart(invId, price) {
+  const p = state.partsInv.find(x => x.id === invId); if(!p) return;
+  const timeOffset = rnd(1, 4);
+  state.myListings.push({ id: uid(), type: 'part', part: p, askingPrice: Math.round(price/100)*100, trueValue: p.price, eventAt: Date.now() + timeOffset*60000, eventFired: false, status: 'active', negotiable: true });
+  state.partsInv = state.partsInv.filter(x => x.id !== invId); save(); render(); alert('Запись выставлена!');
+}
+function makeOffer(chatId, offer) {
+  const chat = state.chats[chatId]; if (!chat || chat.closed) return;
+  const listing = state.listings.find(x => x.id === chat.listingId);
+  const myListing = state.myListings.find(x => x.id === chat.listingId);
+  if (chat.playerIsBuyer && !listing) return alert('Объявление уже неактуально');
+  if (!chat.playerIsBuyer && !myListing) return alert('Объявление уже неактуально');
+
+  chat.messages.push({ role: 'player', type: 'offer', price: offer, text: `Предлагаю ${fmt(offer)} ₽`, ts: Date.now() });
+  chat.attempts--;
+  
+  const delay = rint(2000, 6000);
+  
+  let effectiveOffer = offer;
+  if (!chat.playerIsBuyer && state.user.rating < 3.5) effectiveOffer = offer * 0.9; 
+  
+  const resp = chat.playerIsBuyer ? sellerRespond(listing, offer, chat.attempts) : buyerRespond(myListing, effectiveOffer);
+  
+  chat.messages.push({ role: 'other', type: resp.type, price: resp.price, text: resp.text, ts: Date.now(), visibleAt: Date.now() + delay, notified: false });
+  if (resp.type === 'accept') chat.dealPrice = resp.price;
+  
+  save(); render();
+  setTimeout(() => { if(ui.screen === 'chat' && ui.chatId === chatId) render(); }, delay + 100);
+}
+
+window.startMeeting = function(cid) {
+  const c = state.chats[cid];
+  const t = getTimeData();
+  modal(`<div class="modal">
+    <h2>${c.playerIsBuyer ? 'Когда приедете?' : 'Когда ждать покупателя?'}</h2>
+    <p style="text-align:center;font-size:14px;margin-bottom:15px;color:var(--text-sec)">Сейчас: ${t.fullStr}</p>
+    <div style="display:flex;gap:10px;margin-bottom:15px">
+      <input class="input" id="meet-day" type="number" min="${t.dayIndex + 1}" value="${t.dayIndex + 1}" placeholder="День">
+      <input class="input" id="meet-hour" type="number" min="0" max="23" value="${Math.min(23, t.h+1)}" placeholder="ЧЧ">
+      <input class="input" id="meet-min" type="number" min="0" max="59" value="00" placeholder="ММ">
+    </div>
+    <button class="btn" id="ok">Назначить</button>
+  </div>`, {
+    '#ok': m => {
+      const d = parseInt(m.querySelector('#meet-day').value);
+      const h = parseInt(m.querySelector('#meet-hour').value);
+      const mn = parseInt(m.querySelector('#meet-min').value);
+      if(!d || isNaN(h) || isNaN(mn)) return alert('Введите время');
+      const meetMins = (d - 1) * 1440 + h * 60 + mn;
+      if (meetMins < getTimeData().totalMins) return alert('Нельзя в прошлое');
+      
+      const listing = state.listings.find(x => x.id === c.listingId);
+      c.meeting = { timeMins: meetMins, city: listing ? listing.location : state.currentCity };
+      c.messages.push({ role: 'player', type: 'text', text: `Давайте встретимся ${formatMinsToDateString(meetMins)}.`, ts: Date.now() });
+      c.messages.push({ role: 'other', type: 'text', text: `Хорошо, договорились!`, ts: Date.now() });
+      save(); render();
+    }
+  });
+};
+
+window.openDeliveryModal = function(cid, role) {
+  const c = state.chats[cid];
+  const listing = state.listings.find(x => x.id === c.listingId);
+  const myListing = state.myListings.find(x => x.id === c.listingId);
+  const item = listing || myListing;
+  if (!item) return alert('Ошибка: товар не найден');
+  
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg'; m.id = mId;
+  
+  m.innerHTML = `<div class="modal">
+    <h2>Доставка</h2>
+    <p style="text-align:center;font-size:14px;margin-bottom:15px;color:var(--text-sec)">Куда доставить?</p>
+    <select class="input" id="del-city" disabled>
+      <option>${role === 'buyer' ? state.currentCity : item.location}</option>
+    </select>
+    <p style="font-size:14px;color:var(--text-sec);margin-bottom:10px">Упаковка:</p>
+    <select class="input" id="del-pack">
+      <option value="500">Картонная коробка (500 ₽) - Риск 20%</option>
+      <option value="1500">Пенопласт + скотч (1500 ₽) - Риск 5%</option>
+      <option value="3000">Жесткий кейс (3000 ₽) - Без риска</option>
+    </select>
+    <div class="mact">
+      <button class="btn btn-sec" onclick="this.closest('.modal-bg').remove()">Отмена</button>
+      <button class="btn" onclick="window.confirmDelivery('${cid}', '${role}', '${mId}')">Оформить</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.confirmDelivery = function(cid, role, mId) {
+  const c = state.chats[cid];
+  const m = document.getElementById(mId);
+  const packCost = parseInt(m.querySelector('#del-pack').value);
+  const baseCost = 1000;
+  const totalCost = baseCost + packCost;
+  
+  const listing = state.listings.find(x => x.id === c.listingId);
+  const myListing = state.myListings.find(x => x.id === c.listingId);
+  const item = listing || myListing;
+  if (!item) return;
+  
+  const t = getTimeData();
+  const arriveMins = t.totalMins + 12 * 60; 
+  
+  const isPC = item.pc !== undefined;
+  let newItem;
+  if (isPC) {
+    newItem = { ...item.pc }; // Safe copy
+  } else {
+    newItem = { 
+      id: uid(), 
+      cat: item.cat || 'cpu', 
+      part: item.part || { n: 'Unknown', p: 0, t: 0 }, 
+      condition: item.condition || 0.9, 
+      price: item.price || 0 
+    };
+  }
+  
+  if (packCost === 500 && Math.random() < 0.2) {
+    if (isPC) newItem.condition = Math.max(0.5, newItem.condition - 0.15);
+    else newItem.condition = Math.max(0.5, newItem.condition - 0.15);
+  } else if (packCost === 1500 && Math.random() < 0.05) {
+    if (isPC) newItem.condition = Math.max(0.8, newItem.condition - 0.05);
+    else newItem.condition = Math.max(0.8, newItem.condition - 0.05);
+  }
+  
+  if (role === 'buyer') {
+    const totalPay = c.dealPrice + totalCost;
+    if (state.user.balance < totalPay) return alert('Недостаточно средств на счете для оплаты товара и доставки.');
+    state.user.balance -= totalPay;
+    state.user.transactions.push({ desc: `Покупка ПК (доставка)`, amount: -c.dealPrice, ts: Date.now() });
+    state.user.transactions.push({ desc: `Оплата доставки`, amount: -totalCost, ts: Date.now() });
+    
+    state.deliveries.push({ id: uid(), item: newItem, isPC, arriveMins, chatId: cid, isSeller: false });
+    c.messages.push({ role: 'player', type: 'text', text: `Давайте доставкой. Я оплатил ${fmt(totalCost)} ₽ за доставку.`, ts: Date.now() });
+    c.messages.push({ role: 'other', type: 'text', text: `Принято, отправляю. Трек-номер: TRK-${Math.floor(Math.random()*90000+10000)}.`, ts: Date.now() });
+    
+    state.listings = state.listings.filter(x => x.id !== listing.id);
+  } else {
+    state.user.balance += c.dealPrice;
+    state.user.transactions.push({ desc: `Продажа (доставка)`, amount: c.dealPrice, ts: Date.now() });
+    
+    state.deliveries.push({ id: uid(), item: newItem, isPC, arriveMins, chatId: cid, isSeller: true });
+    c.messages.push({ role: 'player', type: 'text', text: `Отправлю доставкой. Упаковка ${packCost} ₽, итого ${fmt(totalCost)} ₽.`, ts: Date.now() });
+    c.messages.push({ role: 'other', type: 'text', text: `Отлично, ожидаю посылку!`, ts: Date.now() });
+    
+    state.myListings = state.myListings.filter(x => x.id !== myListing.id);
+  }
+  
+  c.closed = true;
+  m.remove();
+  save(); render();
+  alert('Доставка оформлена! Отслеживайте статус в приложении «Доставка».');
+};
+
+function goToMeeting(chatId) {
+  const chat = state.chats[chatId];
+  const listing = state.listings.find(x => x.id === chat.listingId);
+  if(!chat || !listing) return;
+  const t = getTimeData();
+  const nowMins = t.totalMins;
+  const meetMins = chat.meeting.timeMins;
+  if (nowMins < meetMins) return alert('Вы пришли слишком рано! Продавец еще не подошел.');
+  if (nowMins > meetMins + 60 && Math.random() < 0.4) {
+    chat.closed = true;
+    chat.messages.push({ role: 'other', type: 'text', text: 'Извините, я вас ждал, но передумал продавать. До свидания.', ts: Date.now() });
+    save(); render(); return alert('Вы опоздали! Продавец ушел.');
+  }
+  if (state.user.balance < chat.dealPrice) return alert('У вас не хватает денег на покупку!');
+  
+  const flaws = [];
+  if(listing.pc.condition < 0.9) flaws.push('Есть царапины на корпусе');
+  if(Math.random() < 0.3) flaws.push('Шумит один из кулеров');
+  if(!flaws.length) flaws.push('Состояние отличное');
+  
+  modal(`<div class="modal">
+    <h2>Осмотр ПК</h2>
+    <div style="font-size:15px;line-height:1.5;margin-bottom:15px;">
+      <b>Состояние:</b> ${flaws.join(', ')}.<br>
+      <b>Проверка:</b> Включился, температуры в норме.
+    </div>
+    <p style="color:var(--text-sec);text-align:center">Берете за ${fmt(chat.dealPrice)} ₽?</p>
+    <div class="mact">
+      <button class="btn btn-sec" onclick="this.closest('.modal-bg').remove(); window.refuseDeal('${chatId}')">Отказаться</button>
+      <button class="btn btn-green" onclick="this.closest('.modal-bg').remove(); window.finalizeDealFromMeeting('${chatId}')">Беру!</button>
+    </div>
+  </div>`, {});
+}
+
+window.refuseDeal = function(chatId) { const c = state.chats[chatId]; c.closed = true; c.messages.push({ role: 'player', type: 'text', text: 'Я передумал, извините.', ts: Date.now() }); save(); render(); };
+
+window.finalizeDealFromMeeting = function(chatId) {
+  const c = state.chats[chatId]; const l = state.listings.find(x => x.id === c.listingId); if(!l) return;
+  if (state.user.balance < c.dealPrice) return alert('Недостаточно средств!');
+  
+  state.user.balance -= c.dealPrice; state.pcs.push(l.pc); state.listings = state.listings.filter(x => x.id !== l.id);
+  state.user.transactions.push({ desc: `Покупка ПК: ${pcTitle(l.pc)}`, amount: -c.dealPrice, ts: Date.now() });
+  c.closed = true; save(); render(); alert('Куплено! Смотрите Гараж.');
+};
+
+window.finalizeSale = function(chatId) {
+  const c = state.chats[chatId]; const ml = state.myListings.find(x => x.id === c.listingId); if(!ml) return;
+  state.user.balance += c.dealPrice; ml.status = 'sold'; ml.soldPrice = c.dealPrice;
+  state.user.transactions.push({ desc: `Продажа: ${pcTitle(ml.pc)}`, amount: c.dealPrice, ts: Date.now() });
+  const score = ml.pc.condition > 0.9 ? 5 : (ml.pc.condition > 0.7 ? 4 : 2);
+  addReview(score, score === 5 ? 'Всё отлично!' : 'Нормальный ПК.');
+  c.closed = true; save(); render(); alert('Продано! Деньги зачислены.');
+};
+
+window.buyTrainTicket = function(toCity, departMins, arriveMins, cost) {
+  if (state.travel) return alert('Вы уже в пути!');
+  if (state.user.balance < cost) return alert('Недостаточно средств');
+  state.user.balance -= cost;
+  state.user.transactions.push({ desc: `Билет на поезд в ${toCity}`, amount: -cost, ts: Date.now() });
+  state.travel = { toCity, arriveMins }; save(); render();
+  alert(`Билет куплен! Вы прибудете в ${toCity} в ${formatMinsToDateString(arriveMins)}.`);
+};
+
+window.sendToService = function(pcId) {
+  const pc = state.pcs.find(x => x.id === pcId); if(!pc) return;
+  if (pc.condition >= 0.98) return alert('ПК уже в идеальном состоянии!');
+  const cost = Math.max(1000, Math.round(pcValue(pc) * 0.05));
+  if (state.user.balance < cost) return alert('Недостаточно средств для обслуживания!');
+  if (confirm(`Стоимость чистки и замены термопасты: ${fmt(cost)} ₽. Улучшить состояние ПК?`)) {
+    state.user.balance -= cost;
+    state.user.transactions.push({ desc: 'Обслуживание ПК', amount: -cost, ts: Date.now() });
+    pc.condition = 0.98;
+    save(); render(); alert('ПК обслужен! Состояние улучшено.');
+  }
+};
+
+window.takeOrder = function(orderId) {
+  const idx = state.user.orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return;
+  const order = state.user.orders.splice(idx, 1)[0];
+  state.user.activeOrders.push(order);
+  save(); render(); alert('Заказ взят в работу!');
+};
+
+window.fulfillOrder = function(orderId) {
+  const order = state.user.activeOrders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  if (state.pcs.length === 0) {
+    return alert(`У вас нет ПК в гараже для выполнения заказа.\nСоберите ПК или купите на Ахвито!`);
+  }
+  
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg'; m.id = mId;
+  m.innerHTML = `<div class="modal">
+    <h2>Выберите ПК для клиента</h2>
+    <p style="font-size:12px;color:var(--text-sec);margin-bottom:10px;text-align:center">Бюджет клиента: <b>${fmt(order.budget)} ₽</b></p>
+    ${state.pcs.map(pc => {
+      const val = pcValue(pc);
+      const isOver = val > order.budget;
+      return `<button class="btn btn-sec" style="margin-bottom:10px; display:flex; flex-direction:column; align-items:flex-start; padding: 12px;" onclick="window.confirmFulfill('${orderId}', '${pc.id}', '${mId}')">
+        <span class="title">${pcTitle(pc)}</span>
+        <span style="font-size:14px; margin-top:4px; color:${isOver ? 'var(--red)' : 'var(--green)'}">
+          Стоимость: ${fmt(val)} ₽ ${isOver ? `(Убыток: ${fmt(val - order.budget)} ₽)` : ''}
+        </span>
+      </button>`;
+    }).join('')}
+    <button class="btn btn-sec" style="margin-top:10px" onclick="this.closest('.modal-bg').remove()">Отмена</button>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.confirmFulfill = function(orderId, pcId, modalId) {
+  const order = state.user.activeOrders.find(o => o.id === orderId);
+  const pc = state.pcs.find(p => p.id === pcId);
+  if (!order || !pc) return;
+  
+  const val = pcValue(pc);
+  if (val > order.budget) {
+    if (!confirm(`Внимание! Клиент платит только ${fmt(order.budget)} ₽, а ваш ПК стоит ${fmt(val)} ₽.\nВы потеряете ${fmt(val - order.budget)} ₽.\nВсе равно отдать?`)) return;
+  }
+  
+  // If PC is over budget, client only pays their budget. If under budget, player gets PC value + reward (to not scam).
+  const payout = val > order.budget ? order.budget : (val + order.reward);
+  
+  state.user.balance += payout;
+  state.user.transactions.push({ desc: `Выполнение заказа от ${order.client}`, amount: payout, ts: Date.now() });
+  state.pcs = state.pcs.filter(p => p.id !== pcId);
+  state.user.activeOrders = state.user.activeOrders.filter(o => o.id !== orderId);
+  addReview(5, 'Спасибо за ПК!');
+  save(); render();
+  document.getElementById(modalId).remove();
+  alert(`Заказ выполнен! Вы получили ${fmt(payout)} ₽.`);
+};
+
+// --- WORK APP ---
+let wg = { active: false, target: [], current: [false, false, false, false], timer: 15, phase: 'show', reward: 0, interval: null };
+
+function startWorkGame(reward) {
+  wg.active = true;
+  wg.reward = reward;
+  wg.target = [Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5];
+  wg.current = [false, false, false, false];
+  wg.timer = 15;
+  wg.phase = 'show';
+  
+  ui.screen = 'work-game';
+  render();
+
+  setTimeout(() => {
+    if(ui.screen !== 'work-game') return;
+    wg.phase = 'play';
+    render();
+    
+    if(wg.interval) clearInterval(wg.interval);
+    wg.interval = setInterval(() => {
+      wg.timer--;
+      const timerEl = document.getElementById('wg-timer');
+      if(timerEl) timerEl.innerText = wg.timer;
+      if(wg.timer <= 0) endWorkGame(false);
+    }, 1000);
+  }, 3000);
+}
+
+function toggleSwitch(index) {
+  if(wg.phase !== 'play') return;
+  wg.current[index] = !wg.current[index];
+  render();
+  if(JSON.stringify(wg.current) === JSON.stringify(wg.target)) {
+    endWorkGame(true);
+  }
+}
+
+function endWorkGame(success) {
+  wg.active = false;
+  if(wg.interval) clearInterval(wg.interval);
+  if(success) {
+    state.user.balance += wg.reward;
+    state.user.transactions.push({desc: 'Оплата за работу', amount: wg.reward, ts: Date.now()});
+    save();
+    alert(`Работа выполнена! Вы получили ${fmt(wg.reward)} ₽.`);
+  } else {
+    alert('Вы не успели выполнить работу (неправильно переключили тумблеры)!');
+  }
+  ui.screen = 'work';
+  render();
+}
+
+// --- HELPERS ---
+function pcTitle(pc) {
+  try {
+    return `${pc.cpu.n.replace('Intel Core ','').replace('AMD ','')} + ${pc.gpu.n.split(' ')[0]}`;
+  } catch(e) { return 'Ошибка ПК'; }
+}
+function unreadCount() {
+  let n = 0;
+  for (const c of Object.values(state.chats)) {
+    if (c.closed && !c.dealPrice) continue;
+    const v = c.messages.filter(m => !m.visibleAt || m.visibleAt <= Date.now());
+    if (v.length && v[v.length-1].role === 'other' && v[v.length-1].ts > (c.lastReadAt || 0)) n++;
+  }
+  return n;
+}
+function timeSince(ts) {
+  const diff = Math.floor((Date.now() - ts) / 60000);
+  if(diff < 1) return 'только что';
+  if(diff < 60) return `${diff} мин назад`;
+  return `${Math.floor(diff/60)} ч назад`;
+}
+
+// --- VIEWS ---
+function viewHome() {
+  const unread = unreadCount();
+  return `<div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar"><span class="clock">${getTimeData().timeStr}</span><span>📶 🔋</span></div>
+    <div class="home-screen">
+      <div class="app-grid">
+        ${appIcon('ahvito','Ахвито',SVG.ahvito,GRADIENTS.ahvito)}
+        ${appIcon('bank','Банк',SVG.bank,GRADIENTS.bank)}
+        ${appIcon('garage','Гараж',SVG.garage,GRADIENTS.garage)}
+        ${appIcon('sms','СМС',SVG.sms,GRADIENTS.sms, unread)}
+        ${appIcon('work','Работа',SVG.work,GRADIENTS.work)}
+        ${appIcon('orders','Заказы',SVG.orders,GRADIENTS.orders, state.user.orders.length)}
+        ${appIcon('delivery','Доставка',SVG.delivery,GRADIENTS.delivery)}
+        ${appIcon('train','Поезд',SVG.train,GRADIENTS.train)}
+        ${appIcon('minigame','Neon Tap',SVG.game,GRADIENTS.game)}
+        ${appIcon('settings','Настройки',SVG.settings,GRADIENTS.settings)}
+      </div>
+      <div class="game-date" style="text-align:center;color:#fff;font-size:14px;opacity:0.8;margin-top:10px;text-shadow:0 1px 2px #000">
+        ${getTimeData().dateStr} · Ваш город: ${state.currentCity} · ⭐ ${state.user.rating}
+      </div>
+      <div class="dock">
+        ${dockIcon('ahvito',SVG.ahvito,GRADIENTS.ahvito)}
+        ${dockIcon('bank',SVG.bank,GRADIENTS.bank)}
+        ${dockIcon('sms',SVG.sms,GRADIENTS.sms)}
+        ${dockIcon('settings',SVG.settings,GRADIENTS.settings)}
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+function appIcon(id, label, svg, bg, badge) {
+  return `<div class="app" data-nav="${id}"><div class="icon" style="background:${bg}">${svg}${badge?`<div class="badge">${badge}</div>`:''}</div><div class="label">${label}</div></div>`;
+}
+function dockIcon(id, svg, bg) {
+  return `<div class="app" data-nav="${id}"><div class="icon" style="background:${bg}">${svg}</div></div>`;
+}
+
+function viewAhvito() {
+  let body = '';
+  if (ui.tab === 'pc') {
+    body = state.listings.map(l => `
+      <div class="card"><div class="row" data-listing="${l.id}">
+        <div class="photo" style="color:${l.pc.color}">
+          🖥️ ${l.badge === 'top' ? '<div class="badge-top" style="position:absolute;top:4px;left:4px">ТОП</div>' : ''}
+          ${l.badge === 'urgent' ? '<div class="badge-urgent" style="position:absolute;top:4px;left:4px">Срочно</div>' : ''}
+        </div>
+        <div class="info">
+          <div class="price">${fmt(l.askingPrice)} ₽</div>
+          <div class="title">${pcTitle(l.pc)}</div>
+          <div class="csub">${l.location} · ${timeSince(l.createdAt)}</div>
+        </div>
+      </div></div>`).join('') || '<div class="empty">Ничего не найдено</div>';
+  } else if (ui.tab === 'parts') {
+    const cats = ['all', 'cpu', 'gpu', 'mb', 'ram', 'storage', 'psu', 'case'];
+    const filteredParts = state.partsListings.filter(p => ui.partCat === 'all' || p.cat === ui.partCat);
+    body = `<div style="display:flex;overflow-x:auto;gap:10px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;white-space:nowrap">
+      ${cats.map(c => `<div data-partcat="${c}" style="padding:8px 12px;background:${ui.partCat === c ? 'var(--blue)' : 'var(--bg)'};color:${ui.partCat === c ? '#fff' : 'var(--text)'};border-radius:15px;font-size:14px;cursor:pointer;font-weight:600">${c === 'all' ? 'Все' : CAT_LABEL[c]}</div>`).join('')}
+    </div>
+    <div style="padding-bottom:40px">
+      ${filteredParts.map(p => `
+        <div class="card"><div class="row" data-part="${p.id}">
+          <div class="photo" style="color:#00aaff">🛠️</div>
+          <div class="info">
+            <div class="price">${fmt(p.price)} ₽</div>
+            <div class="title">${p.part.n}</div>
+            <div class="csub">${CAT_LABEL[p.cat]}</div>
+          </div>
+        </div></div>`).join('') || '<div class="empty">Нет запчастей в этой категории</div>'}
+    </div>`;
+  } else {
+    body = state.myListings.map(ml => `
+      <div class="card"><div class="card-pad">
+        <div class="price">${fmt(ml.askingPrice)} ₽ <span style="font-size:12px;color:${ml.status==='sold'?'var(--green)':'var(--blue)'}">${ml.status==='sold'?'Продано':'Активно'}</span></div>
+        <div class="title">${ml.type === 'part' ? ml.part.part.n : pcTitle(ml.pc)}</div>
+        ${ml.status==='sold'?`<div class="csub">Продано за ${fmt(ml.soldPrice)} ₽</div>`:`<div class="csub">Ожидание покупателя...</div>`}
+      </div></div>`).join('') || '<div class="empty">У вас нет объявлений</div>';
+  }
+
+  return `<div class="screen">
+    <div class="hdr">
+      <div class="hdr-btn" data-nav="home">‹ Назад</div>
+      <h1>Ахвито</h1>
+      ${ui.tab === 'mine' ? '<div class="hdr-btn right" onclick="window.openSellModal(null)" style="font-size:24px;font-weight:300;line-height:1">+</div>' : '<div class="hdr-btn right"></div>'}
+    </div>
+    <div class="tabs">
+      <div class="tab ${ui.tab==='pc'?'active':''}" data-tab="pc">ПК</div>
+      <div class="tab ${ui.tab==='parts'?'active':''}" data-tab="parts">Запчасти</div>
+      <div class="tab ${ui.tab==='mine'?'active':''}" data-tab="mine">Мои</div>
+    </div>
+    <div class="body">${body}</div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewListing() {
+  const l = state.listings.find(x => x.id === ui.listingId);
+  if (!l) { ui.screen = 'ahvito'; return viewAhvito(); }
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="ahvito">‹ Назад</div><h1>Объявление</h1><div style="width:40px"></div></div>
+    <div class="body">
+      <div class="photo" style="height:240px;font-size:100px;background:var(--card);border-radius:0;color:${l.pc.color}">🖥️</div>
+      <div class="card"><div class="card-pad">
+        <div class="price" style="font-size:24px">${fmt(l.askingPrice)} ₽</div>
+        <div class="title" style="font-size:16px;margin-top:8px">${pcTitle(l.pc)}</div>
+        <div class="csub">${l.location} · ${timeSince(l.createdAt)}</div>
+      </div></div>
+      <div class="card"><div class="specs"><h3 style="margin-bottom:12px">Характеристики</h3>
+        ${Object.entries(CAT_LABEL).map(([k, v]) => `<div class="spec"><span>${v}</span><span>${l.pc[k].n}</span></div>`).join('')}
+        <div class="spec"><span>Состояние</span><span>${Math.round(l.pc.condition*100)}%</span></div>
+      </div></div>
+    </div>
+    <div class="cact">
+      <button class="btn btn-sec" data-chat="${l.id}">Написать</button>
+      <button class="btn" data-buy="${l.id}">Купить</button>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewDelivery() {
+  const t = getTimeData();
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Доставка</h1><div style="width:40px"></div></div>
+    <div class="body">
+      ${state.deliveries.length ? state.deliveries.map(d => {
+        let itemTitle = 'Товар';
+        try {
+          itemTitle = d.isPC ? pcTitle(d.item) : (d.item.part ? d.item.part.n : 'Запчасть');
+        } catch(e) {}
+        return `
+        <div class="card"><div class="card-pad">
+          <div class="title">${itemTitle}</div>
+          <div class="csub">Статус: ${t.totalMins >= d.arriveMins ? 'Доставлено' : 'В пути'}</div>
+          ${t.totalMins < d.arriveMins ? `<div class="csub">Прибытие: ${formatMinsToDateString(d.arriveMins)}</div>` : ''}
+          <div class="csub">${d.isSeller ? 'Вы отправили' : 'Вы заказали'}</div>
+        </div></div>
+      `}).join('') : '<div class="empty">Нет активных доставок</div>'}
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewOrders() {
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Заказы</h1><div style="width:40px"></div></div>
+    <div class="body">
+      ${state.user.activeOrders.length ? `<div style="padding:15px 16px 5px;font-weight:700;font-size:18px">В работе</div>` : ''}
+      ${state.user.activeOrders.map(o => `
+        <div class="card"><div class="card-pad">
+          <div class="title">${o.client}</div>
+          <div class="csub" style="margin-bottom:10px">${o.text}</div>
+          <div class="price" style="font-size:16px;color:var(--blue)">Комиссия: ${fmt(o.reward)} ₽</div>
+          <button class="btn btn-green" style="margin-top:10px" onclick="window.fulfillOrder('${o.id}')">Выполнить</button>
+        </div></div>
+      `).join('')}
+      
+      <div style="padding:15px 16px 5px;font-weight:700;font-size:18px">Доступные заказы</div>
+      ${state.user.orders.map(o => `
+        <div class="card"><div class="card-pad">
+          <div class="title">${o.client}</div>
+          <div class="csub" style="margin-bottom:10px">${o.text}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="price" style="font-size:16px;color:var(--green)">Бюджет: ${fmt(o.budget)} ₽</div>
+            <button class="btn btn-sec btn-sm" onclick="window.takeOrder('${o.id}')">Взять</button>
+          </div>
+        </div></div>
+      `).join('') || '<div class="empty">Пока нет доступных заказов. Ждите...</div>'}
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewWork() {
+  const jobs = [
+    { id: 1, title: 'Починить проводку', reward: 300, desc: 'Электрик. Соединить провода.' },
+    { id: 2, title: 'Настроить сервер', reward: 600, desc: 'Сисадмин. Переключить тумблеры.' },
+    { id: 3, title: 'Срочный ремонт', reward: 1000, desc: 'Мастер. Сложная схема.' }
+  ];
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Работа</h1><div style="width:40px"></div></div>
+    <div class="body">
+      ${jobs.map(j => `
+        <div class="card"><div class="card-pad">
+          <div class="title">${j.title}</div>
+          <div class="csub" style="margin-bottom:10px">${j.desc}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="price" style="font-size:16px;color:var(--green)">Оплата: ${fmt(j.reward)} ₽</div>
+            <button class="btn btn-sec btn-sm" onclick="window.startWorkGame(${j.reward})">Взять</button>
+          </div>
+        </div></div>
+      `).join('')}
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewWorkGame() {
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="work">‹ Назад</div><h1>Электрик</h1><div style="width:40px"></div></div>
+    <div class="body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+      <div style="font-size:20px;font-weight:bold;margin-bottom:10px">Осталось: <span id="wg-timer">${wg.timer}</span> сек</div>
+      <div style="font-size:14px;color:var(--text-sec);margin-bottom:20px">
+        ${wg.phase === 'show' ? 'Запомните комбинацию!' : 'Повторите комбинацию!'}
+      </div>
+      
+      <div class="work-toggles">
+        ${wg.current.map((state, i) => {
+          const active = wg.phase === 'show' ? wg.target[i] : state;
+          return `<div class="w-toggle ${active ? 'on' : 'off'}" onclick="window.toggleSwitch(${i})">
+            <div class="handle"></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+window.toggleSwitch = toggleSwitch;
+window.startWorkGame = startWorkGame;
+
+function viewChat() {
+  const c = state.chats[ui.chatId]; if (!c) return viewSMS();
+  c.lastReadAt = Date.now(); save();
+  const now = Date.now();
+  const msgs = c.messages.filter(m => !m.visibleAt || m.visibleAt <= now);
+  const pending = c.messages.some(m => m.visibleAt > now);
+  
+  let actions = '';
+  
+  if (c.isFamily) {
+    actions = `<div class="cact"><button class="btn btn-sec" data-ask-money="${c.id}">Попросить денег</button></div>`;
+  } else if (c.closed) {
+    actions = `<div style="padding:16px;text-align:center;color:var(--green);font-weight:600">Сделка закрыта</div>`;
+  } else if (pending) {
+    actions = `<div class="typing">Собеседник печатает...</div>`;
+  } else if (c.dealPrice && !c.meeting) {
+    if (c.playerIsBuyer) {
+      actions = `<div class="cact">
+        <button class="btn btn-sec" onclick="window.startMeeting('${c.id}')">Приеду сам</button>
+        <button class="btn" onclick="window.openDeliveryModal('${c.id}', 'buyer')">Доставка (+1000-3000 ₽)</button>
+      </div>`;
+    } else {
+      actions = `<div class="cact">
+        <button class="btn btn-sec" onclick="window.startMeeting('${c.id}')">Пусть приедет</button>
+        <button class="btn" onclick="window.openDeliveryModal('${c.id}', 'seller')">Отправить доставкой</button>
+      </div>`;
+    }
+  } else if (c.meeting) {
+    const t = getTimeData();
+    const nowMins = t.totalMins;
+    const meetMins = c.meeting.timeMins;
+    
+    if (state.currentCity !== c.meeting.city) {
+      actions = `<div class="cact"><div style="color:var(--red);text-align:center;width:100%;font-size:14px;font-weight:600;margin-bottom:10px">Вы не в городе ${c.meeting.city}!</div><button class="btn btn-sec" data-nav="train">Купить билет на поезд</button></div>`;
+    } else if (nowMins < meetMins) {
+      actions = `<div class="cact"><div style="color:var(--blue);text-align:center;width:100%;font-size:14px;font-weight:600">Встреча: ${formatMinsToDateString(meetMins)}. Ждем...</div></div>`;
+    } else {
+      actions = `<div class="cact"><button class="btn btn-green" onclick="window.goToMeeting('${c.id}')">Пойти на встречу</button></div>`;
+    }
+  } else {
+    const last = msgs[msgs.length-1];
+    if (last && last.role === 'other') {
+      if (last.type === 'accept') actions = `<div class="cact"><button class="btn btn-green" onclick="window.finalizeSale('${c.id}')">Завершить сделку</button></div>`;
+      else actions = `<div class="cact"><button class="btn" data-offer="${c.id}">Предложить цену</button><button class="btn btn-green" data-accept="${c.id}" data-price="${last.price}">Принять ${fmt(last.price)} ₽</button></div>`;
+    } else actions = `<div style="padding:16px;text-align:center;color:var(--text-sec)">Ожидание...</div>`;
+  }
+
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="sms">‹ СМС</div><h1>${c.otherPartyName}</h1><div style="width:40px"></div></div>
+    <div class="chat-body" id="chat-scroll">
+      ${msgs.map(m => `<div class="msg ${m.role==='player'?'mp':'mo'}">${m.text}<span class="mt">${new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}
+      ${pending ? '<div class="typing">...</div>' : ''}
+    </div>
+    ${actions}
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewTrain() {
+  let travelBlock = '';
+  if (state.travel) {
+    const arrMins = state.travel.arriveMins;
+    travelBlock = `<div class="card" style="background:var(--blue);color:#fff"><div class="card-pad">
+      <h3>Вы в пути!</h3>
+      <p>Следуете в город ${state.travel.toCity}. Прибытие: ${formatMinsToDateString(arrMins)}</p>
+    </div></div>`;
+  } else {
+    const t = getTimeData();
+    travelBlock = `<div class="card"><div class="card-pad">
+      <h3 style="margin-bottom:10px">Купить билет</h3>
+      <select class="input" id="train-city">
+        ${LOCATIONS.filter(l => l !== state.currentCity).map(l => `<option value="${l}">${l} (от 1000 до 4000 ₽)</option>`).join('')}
+      </select>
+      <p style="font-size:14px;color:var(--text-sec);margin-bottom:10px">Время отправления (День ${t.dayIndex + 1} = Сегодня):</p>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <input class="input" id="train-day" type="number" min="${t.dayIndex + 1}" placeholder="День" value="${t.dayIndex + 1}">
+        <input class="input" id="train-hour" type="number" min="0" max="23" placeholder="ЧЧ" value="12">
+        <input class="input" id="train-min" type="number" min="0" max="59" placeholder="ММ" value="00">
+      </div>
+      <button class="btn" onclick="window.buyTicketModal()">Купить билет</button>
+    </div></div>`;
+  }
+  
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>РЖД</h1><div style="width:40px"></div></div>
+    <div class="body">
+      ${travelBlock}
+      <div class="card"><div class="card-pad">
+        <h3>Ваш город</h3>
+        <p style="font-size:24px;font-weight:800;color:var(--blue)">${state.currentCity}</p>
+        <p style="color:var(--text-sec);margin-top:10px">Текущая дата в игре: ${getTimeData().fullStr}</p>
+      </div></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewSettings() {
+  const isDark = document.body.classList.contains('dark');
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Настройки</h1><div style="width:40px"></div></div>
+    <div class="body">
+      <div class="card"><div class="card-pad" style="text-align:center">
+        <div style="font-size:18px;font-weight:700">Аккаунт: ${currentUser}</div>
+        <div style="font-size:24px;color:#ffcc00;margin-top:5px">⭐ ${state.user.rating}</div>
+      </div></div>
+      
+      <div class="card"><div class="card-pad">
+        <h3 style="margin-bottom:10px">Последние отзывы</h3>
+        ${state.user.reviews.slice(-5).reverse().map(r => `
+          <div style="border-bottom:1px solid var(--border);padding:10px 0">
+            <div style="color:#ffcc00;font-size:14px">${'⭐'.repeat(r.score)}</div>
+            <div style="font-size:14px;margin-top:4px">${r.text}</div>
+          </div>
+        `).join('') || '<div style="color:var(--text-sec);font-size:14px">Пока нет отзывов</div>'}
+      </div></div>
+
+      <div class="card"><div class="card-pad" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:16px;font-weight:500">Тёмная тема</span>
+        <label class="switch"><input type="checkbox" id="theme-toggle" ${isDark?'checked':''}><span class="slider"></span></label>
+      </div></div>
+      <div class="card"><div class="card-pad" style="text-align:center">
+        <button class="btn btn-red" id="logout-btn">Выйти из аккаунта</button>
+      </div></div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+function viewSMS() {
+  const chats = Object.values(state.chats).filter(c => c.messages.filter(m => !m.visibleAt || m.visibleAt <= Date.now()).length > 0);
+  chats.sort((a,b) => b.messages[b.messages.length-1].ts - a.messages[a.messages.length-1].ts);
+  
+  return `<div class="screen"><div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>СМС</h1><div style="width:40px"></div></div>
+    <div class="body">${chats.map(c => {
+      const v = c.messages.filter(m => !m.visibleAt || m.visibleAt <= Date.now());
+      const last = v[v.length-1];
+      const unread = last.role === 'other' && last.ts > (c.lastReadAt || 0);
+      const isFam = c.isFamily;
+      return `<div class="sms-item" data-open-chat="${c.id}">
+        <div class="ava ${isFam?'family':'buyer'}">${c.otherPartyName[0]}</div>
+        <div class="sms-content">
+          <div class="sms-name">${c.otherPartyName}</div>
+          <div class="sms-prev">${last.text}</div>
+        </div>
+        ${unread?'<div class="unread-dot"></div>':''}
+      </div>`;
+    }).join('') || '<div class="empty">Нет сообщений</div>'}</div><div class="home-indicator"></div></div>`;
+}
+
+function viewGarage() {
+  return `<div class="screen">
+    <div class="hdr">
+      <div class="hdr-btn" data-nav="home">‹ Назад</div>
+      <h1>Гараж</h1>
+      <div class="hdr-btn right" onclick="window.openAssembleModal()" style="font-size:24px;font-weight:300;line-height:1">+</div>
+    </div>
+    <div class="body">
+      ${state.pcs.map(pc => `<div class="card"><div class="row" data-pc="${pc.id}"><div class="photo" style="color:${pc.color || '#000'}">🖥️</div><div class="info"><div class="price">${fmt(pcValue(pc))} ₽</div><div class="title">${pcTitle(pc)}</div><div class="csub">Состояние: ${Math.round((pc.condition || 1)*100)}%</div></div></div></div>`).join('') || '<div class="empty">Гараж пуст</div>'}
+      ${state.partsInv.length ? `<div style="padding:20px 16px 10px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center">Запчасти в запасе <button class="btn btn-sec btn-sm" onclick="window.openAssembleModal()">Собрать ПК</button></div>` : ''}
+      ${state.partsInv.map(p => `<div class="card"><div class="card-pad" style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="title">${p.part ? p.part.n : 'Неизвестно'}</div><div class="csub">${CAT_LABEL[p.cat] || ''}</div></div>
+        <button class="btn btn-sec btn-sm" onclick="window.sellPartModal('${p.id}', ${p.price || 0})">Продать</button>
+      </div></div>`).join('')}
+    </div>
+    <div class="home-indicator"></div></div>`;
+}
+
+function viewPC() {
+  const pc = state.pcs.find(x => x.id === ui.pcId); if (!pc) return viewGarage();
+  return `<div class="screen"><div class="hdr"><div class="hdr-btn" data-nav="garage">‹ Гараж</div><h1>Компьютер</h1><div style="width:40px"></div></div>
+    <div class="body"><div class="photo" style="height:200px;font-size:80px;background:var(--card);border-radius:0;color:${pc.color || '#000'}">🖥️</div>
+    <div class="card"><div class="specs">${Object.entries(CAT_LABEL).map(([k,v])=>`<div class="spec"><span>${v}</span><span>${pc[k] ? pc[k].n : '?'}</span></div>`).join('')}<div class="spec"><span>Состояние</span><span>${Math.round((pc.condition || 1)*100)}%</span></div></div></div></div>
+    <div class="cact" style="flex-direction:column">
+      <button class="btn" onclick="window.openSellModal('${pc.id}')">Выставить на Ахвито</button>
+      <button class="btn btn-sec" onclick="window.openUpgradeModal('${pc.id}')">Улучшить ПК</button>
+      <button class="btn btn-green" onclick="window.sendToService('${pc.id}')">Обслуживание (Ремонт/Чистка)</button>
+    </div><div class="home-indicator"></div></div>`;
+}
+
+function viewBankPinSetup() { return `<div class="screen"><div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Банк</h1><div style="width:40px"></div></div><div class="body" style="padding:40px 20px;text-align:center"><div style="font-size:18px;margin-bottom:20px">Придумайте ПИН-код</div><input class="input" id="pin" type="tel" maxlength="4" style="text-align:center;font-size:24px;letter-spacing:8px" placeholder="••••"><button class="btn" id="pin-ok" style="margin-top:20px">Сохранить</button></div><div class="home-indicator"></div></div>`; }
+function viewBankPin() { return `<div class="screen"><div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Банк</h1><div style="width:40px"></div></div><div class="body" style="padding:40px 20px;text-align:center"><div style="font-size:18px;margin-bottom:20px">Введите ПИН-код</div><input class="input" id="pin" type="tel" maxlength="4" style="text-align:center;font-size:24px;letter-spacing:8px" placeholder="••••"><button class="btn" id="pin-ok" style="margin-top:20px">Войти</button></div><div class="home-indicator"></div></div>`; }
+
+function viewBank() {
+  const txs = state.user.transactions.slice().reverse().slice(0,20).map(t => `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:15px">${t.desc}</div><div style="font-size:12px;color:var(--text-sec)">${new Date(t.ts).toLocaleString()}</div></div><div style="font-weight:700;color:${t.amount>=0?'var(--green)':'var(--red)'}">${t.amount>=0?'+':''}${fmt(t.amount)} ₽</div></div>`).join('');
+  
+  const loanBlock = `
+    <div class="card"><div class="card-pad">
+      <h3 style="margin-bottom:10px">Кредит банка</h3>
+      <p style="font-size:14px;color:var(--text-sec);margin-bottom:10px">Максимум 100 000 ₽. Переплата 15%.</p>
+      <button class="btn btn-sec" id="btn-loan-take" style="padding:10px">Взять кредит</button>
+    </div></div>
+  `;
+
+  const debtBlock = state.debts.length ? `
+    <div class="card"><div class="card-pad">
+      <h3 style="margin-bottom:10px;color:var(--red)">Текущие долги</h3>
+      ${state.debts.map(d => `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:10px">
+          <div>
+            <div style="font-size:16px;font-weight:600">${d.creditor}</div>
+            <div style="font-size:14px;color:var(--red)">${fmt(d.amount)} ₽</div>
+          </div>
+          <button class="btn btn-green btn-sm" onclick="window.repayDebt('${d.id}')">Погасить</button>
+        </div>
+      `).join('')}
+    </div></div>
+  ` : '';
+
+  return `<div class="screen"><div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Банк</h1><div style="width:40px"></div></div><div class="body"><div class="card" style="background:linear-gradient(135deg,#34c759,#28a745);color:#fff"><div class="card-pad"><div>Баланс</div><div style="font-size:32px;font-weight:800;margin-top:8px">${fmt(state.user.balance)} ₽</div></div></div>
+  ${loanBlock}
+  ${debtBlock}
+  <div class="card"><div class="card-pad"><h3>История</h3>${txs}</div></div></div><div class="home-indicator"></div></div>`;
+}
+
+// --- NEON TAP GAME ---
+let gameInterval = null;
+let gameTimeout = null;
+function viewMinigame() {
+  setTimeout(() => initMinigame(), 100);
+  return `<div class="screen">
+    <div class="hdr"><div class="hdr-btn" data-nav="home">‹ Назад</div><h1>Neon Tap</h1><div style="width:40px"></div></div>
+    <div class="game-area" id="game-area">
+      <div class="game-hud">
+        <div>Очки: <span id="game-score">0</span></div>
+        <div style="font-size:16px;margin-top:8px;color:#aaa">Время идет х275!</div>
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+}
+
+window.tapTarget = function(el) {
+  if(!window.miniGame) return;
+  window.miniGame.score++;
+  document.getElementById('game-score').innerText = window.miniGame.score;
+  el.remove();
+  spawnTarget();
+  clearTimeout(gameTimeout);
+  gameTimeout = setTimeout(() => { if(window.miniGame) gameOver(); }, window.miniGame.timeLimit);
+};
+
+function spawnTarget() {
+  const area = document.getElementById('game-area');
+  if(!area || !window.miniGame) return;
+  
+  const size = Math.max(30, 70 - window.miniGame.score * 2);
+  const el = document.createElement('div');
+  el.className = 'neon-target';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  
+  const maxX = area.clientWidth - size;
+  const maxY = area.clientHeight - size - 100;
+  
+  const x = Math.random() * maxX;
+  const y = Math.random() * maxY + 50;
+  
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.setAttribute('onclick', 'window.tapTarget(this)');
+  
+  area.appendChild(el);
+}
+
+function gameOver() {
+  if(!window.miniGame) return;
+  clearTimeout(gameTimeout);
+  const score = window.miniGame.score;
+  if (score > (state.gameHighScore || 0)) {
+    state.gameHighScore = score;
+    save();
+  }
+  
+  const area = document.getElementById('game-area');
+  const over = document.createElement('div');
+  over.className = 'game-over';
+  over.innerHTML = `
+    <h2 style="font-size:32px;margin-bottom:10px;color:#fff">Игра окончена</h2>
+    <p style="font-size:20px;margin-bottom:20px;color:#fff">Ваш рекорд: <b>${state.gameHighScore}</b></p>
+    <p style="font-size:18px;margin-bottom:30px;color:#00ffcc">Очки за забег: ${score}</p>
+    <button class="btn" style="width:200px" onclick="window.restartGame()">Еще раз</button>
+    <button class="btn btn-sec" style="width:200px;margin-top:10px" data-nav="home">В меню</button>
+  `;
+  area.appendChild(over);
+  window.miniGame = null;
+}
+
+window.restartGame = function() {
+  document.querySelector('.game-over').remove();
+  initMinigame();
+};
+
+function initMinigame() {
+  if(gameTimeout) clearTimeout(gameTimeout);
+  const area = document.getElementById('game-area');
+  if(!area) return;
+  area.querySelectorAll('.neon-target').forEach(t => t.remove());
+  window.miniGame = { score: 0, timeLimit: 1500 };
+  document.getElementById('game-score').innerText = 0;
+  spawnTarget();
+  gameTimeout = setTimeout(() => { if(window.miniGame) gameOver(); }, window.miniGame.timeLimit);
+}
+
+// --- AUTH & RENDER ---
+function renderAuth() {
+  $('#app').innerHTML = `
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar"><span class="clock">${getTimeData().timeStr}</span><span>📶 🔋</span></div>
+    <div class="screen" style="background:var(--card);justify-content:center;padding:40px;overflow-y:auto">
+      <div style="font-size:36px;font-weight:800;color:var(--blue);text-align:center;margin-bottom:30px">ПЕРЕКУП</div>
+      <input class="input" id="auth-user" placeholder="Логин">
+      <input class="input" id="auth-pass" type="password" placeholder="Пароль (мин. 6 символов)">
+      <select class="input" id="auth-city">
+        ${LOCATIONS.map(l => `<option value="${l}">${l}</option>`).join('')}
+      </select>
+      <button class="btn" id="auth-submit" style="margin-top:10px">${isRegisterMode ? 'Зарегистрироваться' : 'Войти'}</button>
+      <div id="auth-switch" style="text-align:center;margin-top:20px;color:var(--blue);font-size:15px;cursor:pointer;">
+        ${isRegisterMode ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}
+      </div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>`;
+
+  $('#auth-switch').onclick = () => { isRegisterMode = !isRegisterMode; renderAuth(); };
+  $('#auth-submit').onclick = () => {
+    const u = $('#auth-user').value.trim();
+    const p = $('#auth-pass').value;
+    const city = $('#auth-city').value;
+    if (u.length < 3) return alert('Логин от 3 символов');
+    if (p.length < 6) return alert('Пароль от 6 символов');
+
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '{}');
+    if (isRegisterMode) {
+      if (users[u]) return alert('Этот логин уже занят.');
+      users[u] = { pass: hashStr(p), data: newGame(u, p, city) };
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      loadUserData(u);
+      genMarket();
+      save();
+      render();
+    } else {
+      if (!users[u] || users[u].pass !== hashStr(p)) return alert('Неверный логин или пароль');
+      loadUserData(u); render();
+    }
+  };
+}
+
+function render() {
+  if (gameInterval) { clearTimeout(gameInterval); gameInterval = null; }
+  if (gameTimeout) { clearTimeout(gameTimeout); gameTimeout = null; }
+  
+  if (!currentUser) return renderAuth();
+  if (!state.user.pin && ui.screen !== 'bank-pin-setup') { ui.screen = 'bank-pin-setup'; }
+  
+  updateTime();
+  
+  const scr = ui.screen;
+  let html = '';
+  if (scr === 'home') html = viewHome();
+  else if (scr === 'ahvito') html = viewAhvito();
+  else if (scr === 'listing') html = viewListing();
+  else if (scr === 'delivery') html = viewDelivery();
+  else if (scr === 'orders') html = viewOrders();
+  else if (scr === 'work') html = viewWork();
+  else if (scr === 'work-game') html = viewWorkGame();
+  else if (scr === 'chat') html = viewChat();
+  else if (scr === 'sms') html = viewSMS();
+  else if (scr === 'garage') html = viewGarage();
+  else if (scr === 'pc') html = viewPC();
+  else if (scr === 'settings') html = viewSettings();
+  else if (scr === 'bank-pin-setup') html = viewBankPinSetup();
+  else if (scr === 'bank-pin') html = viewBankPin();
+  else if (scr === 'bank') html = viewBank();
+  else if (scr === 'minigame') html = viewMinigame();
+  else if (scr === 'train') html = viewTrain();
+  else html = viewHome();
+  
+  $('#app').innerHTML = html;
+  bind();
+  
+  if (ui.screen === 'chat') {
+    setTimeout(() => {
+      const chatBody = document.getElementById('chat-scroll');
+      if(chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+    }, 50);
+  }
+}
+
+function navTo(screen) {
+  updateTime();
+  if (screen !== 'work-game' && wg.interval) { clearInterval(wg.interval); wg.active = false; }
+  
+  if (screen === 'bank' && state.user.pin) ui.screen = 'bank-pin';
+  else ui.screen = screen;
+  if (screen === 'ahvito') {
+    ui.tab = 'pc';
+    if (!state.listings || state.listings.length === 0) genMarket();
+  }
+  render();
+}
+
+// --- GLOBAL WINDOW FUNCTIONS ---
+window.openSellModal = function(pcId = null) {
+  if (!state.pcs.length) return alert('Сначала купите ПК в гараже');
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg';
+  m.id = mId;
+  const pcList = state.pcs.map(pc => `<button class="btn btn-sec" style="margin-bottom:10px" onclick="window.selectPC('${pc.id}', ${Math.round(pcValue(pc)*1.2/500)*500}, '${mId}')">${pcTitle(pc)} (${fmt(pcValue(pc))} ₽)</button>`).join('');
+  
+  m.innerHTML = `<div class="modal">
+    <h2>Выберите ПК</h2>
+    <div id="list-step1">${pcList}</div>
+    <div id="list-step2" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:20px">
+      <input type="hidden" id="list-pc-id">
+      <p style="font-size:14px;color:var(--text-sec);margin-bottom:10px">Укажите цену продажи</p>
+      <input class="input" id="list-price" type="number">
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:15px;font-size:15px">
+        <input type="checkbox" id="list-negotiable" style="width:20px;height:20px"> Торг уместен
+      </label>
+      <div class="mact"><button class="btn btn-sec" onclick="this.closest('.modal-bg').remove()">Отмена</button><button class="btn" onclick="window.confirmListPC('${mId}')">Выставить</button></div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.selectPC = function(pcId, price, modalId) {
+  const m = document.getElementById(modalId);
+  if(!m) return;
+  m.querySelector('#list-pc-id').value = pcId;
+  m.querySelector('#list-price').value = price;
+  m.querySelector('#list-step1').style.display = 'none';
+  m.querySelector('#list-step2').style.display = 'block';
+};
+
+window.confirmListPC = function(modalId) {
+  const m = document.getElementById(modalId);
+  if(!m) return;
+  const pcId = m.querySelector('#list-pc-id').value;
+  const price = parseInt(m.querySelector('#list-price').value);
+  const negotiable = m.querySelector('#list-negotiable').checked;
+  if (!price || price < 1000) return alert('Цена минимум 1000 ₽');
+  postPC(pcId, price, negotiable);
+  m.remove();
+};
+
+window.sellPartModal = function(invId, recPrice) {
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg';
+  m.id = mId;
+  m.innerHTML = `<div class="modal">
+    <h2>Продажа запчасти</h2>
+    <p style="font-size:14px;color:var(--text-sec);margin-bottom:10px">Укажите цену. Покупатели могут торговаться.</p>
+    <input class="input" id="part-price" type="number" value="${Math.round(recPrice*1.2)}">
+    <div class="mact">
+      <button class="btn btn-sec" onclick="this.closest('.modal-bg').remove()">Отмена</button>
+      <button class="btn" onclick="window.confirmSellPart('${invId}', '${mId}')">Выставить</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.confirmSellPart = function(invId, modalId) {
+  const m = document.getElementById(modalId);
+  const price = parseInt(m.querySelector('#part-price').value);
+  if (!price || price < 100) return alert('Цена слишком низкая');
+  postPart(invId, price);
+  m.remove();
+};
+
+window.buyTicketModal = function() {
+  const toCity = document.getElementById('train-city').value;
+  const day = parseInt(document.getElementById('train-day').value);
+  const h = parseInt(document.getElementById('train-hour').value);
+  const m = parseInt(document.getElementById('train-min').value);
+  if(!day || isNaN(h) || isNaN(m)) return alert('Заполните время');
+  
+  const t = getTimeData();
+  const currentMins = t.totalMins;
+  const departMins = (day - 1) * 1440 + h * 60 + m;
+  
+  if (departMins < currentMins) return alert('Нельзя купить билет на прошлое!');
+  
+  const cost = rint(1000, 4000);
+  if (confirm(`Билет до ${toCity} будет стоить ${fmt(cost)} ₽.\nОтправление: ${formatMinsToDateString(departMins)}.\nВ пути: 2 часа.\nПокупаем?`)) {
+    window.buyTrainTicket(toCity, departMins, departMins + 120, cost);
+  }
+};
+
+window.openUpgradeModal = function(pcId) {
+  const pc = state.pcs.find(x => x.id === pcId);
+  if (!pc) return;
+  if (!state.partsInv.length) return alert('У вас нет запчастей в гараже для апгрейда.');
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg';
+  m.id = mId;
+  const partsList = state.partsInv.map(p => {
+    const isBetter = p.part && pc[p.cat] && p.part.p > pc[p.cat].p;
+    return `<button class="btn btn-sec" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;" onclick="window.doUpgrade('${pcId}', '${p.id}')">
+      <span>${p.part ? p.part.n : 'Неизвестно'} (${CAT_LABEL[p.cat] || ''})</span>
+      <span style="color:${isBetter?'var(--green)':'var(--red)'}">${isBetter?'▲ Улучшение':'▼ Хуже'}</span>
+    </button>`;
+  }).join('');
+  
+  m.innerHTML = `<div class="modal">
+    <h2>Апгрейд ПК</h2>
+    <p style="text-align:center;color:var(--text-sec);font-size:14px;margin-bottom:15px">Выберите запчасть из гаража, чтобы заменить текущую.</p>
+    ${partsList}
+    <button class="btn btn-sec" style="margin-top:10px" onclick="this.closest('.modal-bg').remove()">Отмена</button>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.doUpgrade = function(pcId, invId) {
+  const pc = state.pcs.find(x => x.id === pcId);
+  const invItem = state.partsInv.find(x => x.id === invId);
+  if (!pc || !invItem) return;
+  const oldPart = pc[invItem.cat];
+  pc[invItem.cat] = invItem.part;
+  state.partsInv = state.partsInv.filter(x => x.id !== invId);
+  state.partsInv.push({ id: uid(), cat: invItem.cat, part: oldPart, condition: 0.8, price: Math.round(oldPart.p * 0.8) });
+  save();
+  document.querySelector('.modal-bg').remove();
+  render();
+  alert('Запчасть успешно заменена!');
+};
+
+window.openAssembleModal = function() {
+  const cats = ['cpu', 'gpu', 'mb', 'ram', 'storage', 'psu', 'case'];
+  const hasAll = cats.every(c => state.partsInv.some(p => p.cat === c));
+  if (!hasAll) return alert('Для сборки нужны детали всех 7 категорий!\n(Проц, видюха, мать, ОЗУ, диск, БП, корпус)');
+  
+  const mId = 'modal_' + uid();
+  const m = document.createElement('div');
+  m.className = 'modal-bg';
+  m.id = mId;
+  m.innerHTML = `<div class="modal">
+    <h2>Сборка ПК</h2>
+    <p style="text-align:center;color:var(--text-sec);font-size:14px;margin-bottom:15px">Выберите детали из гаража для сборки.</p>
+    <div id="assemble-form">
+      ${cats.map(c => `
+        <div style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--text-sec)">${CAT_LABEL[c]}</label>
+          <select class="input" id="sel-${c}" style="margin-bottom:5px">
+            ${state.partsInv.filter(p => p.cat === c).map(p => `<option value="${p.id}">${p.part.n}</option>`).join('')}
+          </select>
+        </div>
+      `).join('')}
+    </div>
+    <div class="mact">
+      <button class="btn btn-sec" onclick="this.closest('.modal-bg').remove()">Отмена</button>
+      <button class="btn" onclick="window.confirmAssemble('${mId}')">Собрать</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+};
+
+window.confirmAssemble = function(modalId) {
+  const m = document.getElementById(modalId);
+  if (!m) return;
+  const cats = ['cpu', 'gpu', 'mb', 'ram', 'storage', 'psu', 'case'];
+  const newPc = {
+    id: uid(),
+    condition: 0.95,
+    color: pick(COLORS)
+  };
+  
+  const partsToRemove = [];
+  for (const c of cats) {
+    const sel = m.querySelector(`#sel-${c}`);
+    if (!sel) return alert('Ошибка выбора');
+    const invId = sel.value;
+    const item = state.partsInv.find(x => x.id === invId);
+    if (!item) return alert('Деталь не найдена');
+    newPc[c] = item.part;
+    partsToRemove.push(invId);
+  }
+  
+  state.partsInv = state.partsInv.filter(p => !partsToRemove.includes(p.id));
+  state.pcs.push(newPc);
+  save();
+  m.remove();
+  render();
+  alert('ПК успешно собран! Смотрите его в гараже.');
+};
+
+window.repayDebt = function(debtId) {
+  const d = state.debts.find(x => x.id === debtId);
+  if (!d) return;
+  if (state.user.balance < d.amount) return alert('Недостаточно средств для погашения');
+  state.user.balance -= d.amount;
+  state.user.transactions.push({ desc: `Погашение долга: ${d.creditor}`, amount: -d.amount, ts: Date.now() });
+  state.debts = state.debts.filter(x => x.id !== debtId);
+  save(); render(); alert('Долг погашен!');
+};
+
+function bind() {
+  document.querySelectorAll('[data-nav]').forEach(el => el.onclick = () => navTo(el.dataset.nav));
+  document.querySelectorAll('[data-tab]').forEach(el => el.onclick = () => { ui.tab = el.dataset.tab; ui.partCat = 'all'; render(); });
+  document.querySelectorAll('[data-partcat]').forEach(el => el.onclick = () => { ui.partCat = el.dataset.partcat; render(); });
+  document.querySelectorAll('[data-listing]').forEach(el => el.onclick = () => { ui.listingId = el.dataset.listing; ui.screen = 'listing'; render(); });
+  document.querySelectorAll('[data-part]').forEach(el => el.onclick = () => {
+    const p = state.partsListings.find(x => x.id === el.dataset.part);
+    if(!p) return;
+    modal(`<div class="modal"><h2>${p.part.n}</h2><p style="text-align:center;color:var(--text-sec)">Состояние ${Math.round(p.condition*100)}%</p><div class="price" style="text-align:center;font-size:24px;margin:16px 0">${fmt(p.price)} ₽</div><div class="mact"><button class="btn btn-sec" id="cancel">Отмена</button><button class="btn" id="buy-part">Купить</button></div></div>`, {
+      '#cancel': () => {},
+      '#buy-part': () => {
+        if (state.user.balance < p.price) return alert('Недостаточно средств');
+        state.user.balance -= p.price;
+        state.user.transactions.push({ desc: `Покупка: ${p.part.n}`, amount: -p.price, ts: Date.now() });
+        state.partsInv.push({...p, id: uid()});
+        state.partsListings = state.partsListings.filter(x => x.id !== p.id);
+        save(); render(); alert('Куплено! Смотрите Гараж.');
+      }
+    });
+  });
+  
+  document.querySelectorAll('[data-open-chat]').forEach(el => el.onclick = () => { ui.chatId = el.dataset.openChat; ui.screen = 'chat'; render(); });
+  
+  document.querySelectorAll('[data-chat]').forEach(el => el.onclick = () => {
+    const l = state.listings.find(x => x.id === el.dataset.chat);
+    if (l) {
+      const cid = 'mk_' + l.id;
+      if (!state.chats[cid]) {
+        state.chats[cid] = { id: cid, listingId: l.id, playerIsBuyer: true, messages: [{ role: 'other', type: 'text', text: 'Здравствуйте, актуально.', ts: Date.now() }], closed: false, dealPrice: null, attempts: l.seller.patience, lastReadAt: 0, otherPartyName: l.seller.name };
+      }
+      ui.chatId = cid; ui.screen = 'chat'; render();
+    }
+  });
+  
+  document.querySelectorAll('[data-buy]').forEach(el => el.onclick = () => { if(confirm('Купить этот ПК?')) buyNowDirect(el.dataset.buy); });
+  document.querySelectorAll('[data-pc]').forEach(el => el.onclick = () => { ui.pcId = el.dataset.pc; ui.screen = 'pc'; render(); });
+
+  document.querySelectorAll('[data-offer]').forEach(el => el.onclick = () => {
+    const cid = el.dataset.offer;
+    modal(`<div class="modal"><h2>Ваше предложение</h2><input class="input" id="off" type="number" placeholder="Сумма, ₽"><div class="mact"><button class="btn btn-sec" id="cancel">Отмена</button><button class="btn" id="ok">Отправить</button></div></div>`, {
+      '#cancel': () => {}, '#ok': m => { const v = parseInt(m.querySelector('#off').value); if (!v || v <= 0) return false; makeOffer(cid, v); }
+    });
+  });
+
+  document.querySelectorAll('[data-ask-money]').forEach(el => el.onclick = () => {
+    const cid = el.dataset.askMoney;
+    modal(`<div class="modal"><h2>Сколько попросить?</h2><input class="input" id="ask-sum" type="number" placeholder="Сумма, ₽"><div class="mact"><button class="btn btn-sec" id="cancel">Отмена</button><button class="btn" id="ok">Попросить</button></div></div>`, {
+      '#cancel': () => {},
+      '#ok': m => {
+        const sum = parseInt(m.querySelector('#ask-sum').value);
+        if (!sum || sum <= 0) return false;
+        const c = state.chats[cid];
+        const member = cid.replace('fam_', '');
+        const fam = state.family[member];
+        c.messages.push({ role: 'player', type: 'text', text: `Привет. Можешь занять ${fmt(sum)} ₽?`, ts: Date.now() });
+        
+        let give = 0; let respText = '';
+        if (sum > fam.max) { give = fam.max; respText = `Ой, у меня нет столько. Могу дать только ${fmt(give)} ₽.`; } 
+        else {
+          if (Math.random() < 0.2) respText = 'Ой, сейчас самим не хватает, прости...';
+          else { give = sum; respText = `Конечно, держи ${fmt(give)} ₽. Но потом отдашь!`; }
+        }
+        c.messages.push({ role: 'other', type: 'text', text: respText, ts: Date.now() });
+        if (give > 0) {
+          state.user.balance += give;
+          state.user.transactions.push({ desc: `Займ от ${c.otherPartyName}`, amount: give, ts: Date.now() });
+          state.debts.push({ id: uid(), creditor: c.otherPartyName, amount: give });
+        }
+        save(); render();
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-accept]').forEach(el => el.onclick = () => makeOffer(el.dataset.accept, parseInt(el.dataset.price)));
+  
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) themeToggle.onchange = (e) => { if (e.target.checked) { document.body.classList.add('dark'); localStorage.setItem(THEME_KEY, 'dark'); } else { document.body.classList.remove('dark'); localStorage.setItem(THEME_KEY, 'light'); } };
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.onclick = () => { currentUser = null; state = null; ui.screen = 'home'; render(); };
+
+  const pinOk = document.getElementById('pin-ok');
+  if (pinOk) pinOk.onclick = () => {
+    const val = document.getElementById('pin').value;
+    if (ui.screen === 'bank-pin-setup') {
+      if (val.length !== 4) return alert('ПИН должен быть 4 цифры');
+      state.user.pin = hashStr(val); save(); ui.screen = 'bank'; render();
+    } else {
+      if (hashStr(val) === state.user.pin) { ui.screen = 'bank'; render(); } else alert('Неверный ПИН');
+    }
+  };
+
+  const btnLoanTake = document.getElementById('btn-loan-take');
+  if(btnLoanTake) btnLoanTake.onclick = () => {
+    const avail = 100000 - state.debts.filter(d=>d.creditor==='Банк').reduce((s,d)=>s+d.amount,0);
+    const amt = prompt(`Сколько хотите взять? (Доступно до ${fmt(avail)} ₽)`);
+    const num = parseInt(amt);
+    if (!num || num <= 0 || num > avail) return alert('Неверная сумма');
+    const interest = Math.round(num * 1.15);
+    state.user.balance += num;
+    state.user.transactions.push({ desc: 'Кредит в банке', amount: num, ts: Date.now() });
+    state.debts.push({ id: uid(), creditor: 'Банк', amount: interest });
+    save(); render(); alert(`Вы взяли ${fmt(num)} ₽. К возврату: ${fmt(interest)} ₽.`);
+  };
+}
+
+function modal(html, handlers) {
+  const m = document.createElement('div'); m.className = 'modal-bg'; m.innerHTML = html; document.body.appendChild(m);
+  m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+  for (const [sel, fn] of Object.entries(handlers || {})) {
+    const el = m.querySelector(sel);
+    if (el) el.addEventListener('click', () => { const r = fn(m); if (r !== false) m.remove(); });
+  }
+  return m;
+}
+
+// Global Tick for time and UI updating (NO FULL RENDER to prevent flickering)
+setInterval(() => {
+  if(!currentUser || !state) return;
+  
+  updateTime();
+  
+  const clockEls = document.querySelectorAll('.clock');
+  const timeStr = getTimeData().timeStr;
+  clockEls.forEach(el => { if (el.innerText !== timeStr) el.innerText = timeStr; });
+  
+  const dateEls = document.querySelectorAll('.game-date');
+  const t = getTimeData();
+  dateEls.forEach(el => { 
+    const str = `${t.dateStr} · Ваш город: ${state.currentCity} · ⭐ ${state.user.rating}`;
+    if (el.innerText !== str) el.innerText = str; 
+  });
+  
+  // Check for events (messages, deliveries, etc)
+  checkEvents();
+  
+  // If we are in chat and a new message arrived, re-render the chat
+  if (ui.screen === 'chat') {
+    const chat = state.chats[ui.chatId];
+    if (chat) {
+      const currentLen = chat.messages.filter(m => !m.visibleAt || m.visibleAt <= Date.now()).length;
+      const elCount = document.querySelectorAll('#chat-scroll .msg').length;
+      if (currentLen > elCount) {
+        render();
+      }
+    }
+  }
+  
+  // If we are in delivery screen and items change, re-render
+  if (ui.screen === 'delivery') {
+    const elCount = document.querySelectorAll('.body .card').length;
+    if (state.deliveries.length !== elCount) render();
+  }
+}, 1000);
+
+// INIT
+initTheme();
+render();
+</script>
+</body>
+</html>
